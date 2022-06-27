@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+    <head>
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
+        <link rel="stylesheet" href="maze.css">
+        <script src="maze.js"></script>
+        <script>
+            const conf = {
+                blockSizePx: 10,
+                numBlocksWide: 50,
+                numBlocksHigh: 150
+            };
+
+            function genMaze() {
+                drawMaze(conf);
+            }
+
+            window.addEventListener('load', (event) => {
+                const genBtn = document.querySelector('#generate-maze');
+                genBtn.addEventListener('click', genMaze);
+            });
+        </script>
+    </head>
+    <body>
+        <div class="container">
+            <div class="title-bar">
+                <div class="title">Maze Generator</div>
+                <div><button id="generate-maze">Generate</button></div>
+            </div>
+            <div class="maze-container"></div>
+        </div>
+    </body>
+</html>
