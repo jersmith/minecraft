@@ -94,7 +94,15 @@ class Maze {
             case 'W':
                 range = Math.min(currentPosition.x, 10);
                 offset = Math.floor(Math.random() * range);
+                if (offset < 3) offset = 3;
+                if (currentPosition.x - offset < 0) offset = currentPosition.x;
+
+
                 nextPosition = new Point(currentPosition.x - offset, currentPosition.y);
+                if (currentPosition.x < 0) {
+                    nextPosition.x = 0;
+                    offset = currentPosition.x - nextPosition.x;
+                }
 
                 for (let i = offset; i > 0; i-- ) {
                     this.setPoint(new Point(currentPosition.x - i, currentPosition.y), true);
@@ -104,7 +112,16 @@ class Maze {
             case 'E':
                 range = Math.min(width - currentPosition.x, 10);
                 offset = Math.floor(Math.random() * range);
+                // ### current position is going greater than width, which then causes W to go less than zero
+                if (offset < 3) offset = 3;
+                if (currentPosition.x + offset > width) offset = width - 1;
+
                 nextPosition = new Point(currentPosition.x + offset, currentPosition.y);
+                if (currentPosition.x > width - 1) {
+                    nextPosition.x = width - 1;
+                    offset = nextPosition.x - currentPosition.x;
+                }
+
 
                 for (let i = 0; i <= offset; i++ ) {
                     this.setPoint(new Point(currentPosition.x + i, currentPosition.y), true);
