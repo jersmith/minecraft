@@ -13,20 +13,10 @@ class Maze {
         for (let i = 0; i < conf.numBlocksHigh; i++) {
             const row = [];
             for (let j = 0; j < conf.numBlocksWide; j++) {
-                row.push(false);
+                row.push(0);
             }
             this.grid.push(row);
         }
-    }
-
-    testCheckerBoard() {
-        this.grid.forEach( (row, i) => {
-            row.forEach( (cell, j) => {
-                row[j] = (i % 2 === 0 && j % 2 === 0) || (i % 2 === 1 && j % 2 === 1);
-            });
-        });
-
-        return this.grid;
     }
 
     regenerateMaze() {
@@ -40,11 +30,9 @@ class Maze {
         const entryRow = this.grid.length - 1;
         const entryCell = Math.floor(Math.random() * this.grid[0].length);
 
-        console.log('entryCell: ', entryCell);
-
         let currentPosition = new Point(entryCell, entryRow);
         let currentDirection;
-        this.setPoint(currentPosition, true);
+        this.setPoint(currentPosition, 1);
 
         console.log('startingPoint: ', currentPosition);
 
@@ -52,16 +40,10 @@ class Maze {
 
         while(currentPosition.y > 0) {
             const current = this.moveNextSuccessPath(currentPosition, currentDirection);
-            // ### destructure?
             currentPosition = current.currentPosition;
             currentDirection = current.currentDirection;
 
             count++;
-
-            if (count > 100) {
-                console.log('hit max');
-                break;
-            }
         }
     }
 
@@ -78,7 +60,7 @@ class Maze {
 
         switch (direction) {
             case 'N':
-                range = Math.min(currentPosition.y, 12);
+                range = Math.min(currentPosition.y, Math.floor(height * 0.1));
                 offset = Math.round(Math.random() * range);
 
                 if (offset === 1) offset = 2;
@@ -87,12 +69,12 @@ class Maze {
                 nextPosition = new Point(currentPosition.x, currentPosition.y - offset);
 
                 for (let i = offset; i > 0; i-- ) {
-                    this.setPoint(new Point(currentPosition.x, currentPosition.y - i), true);
+                    this.setPoint(new Point(currentPosition.x, currentPosition.y - i), 1);
                 }
 
                 break;
             case 'W':
-                range = Math.min(currentPosition.x, 10);
+                range = Math.min(currentPosition.x, Math.floor(width * 0.1));
                 offset = Math.floor(Math.random() * range);
                 if (offset < 3) offset = 3;
                 if (currentPosition.x - offset < 0) offset = currentPosition.x;
@@ -105,12 +87,12 @@ class Maze {
                 }
 
                 for (let i = offset; i > 0; i-- ) {
-                    this.setPoint(new Point(currentPosition.x - i, currentPosition.y), true);
+                    this.setPoint(new Point(currentPosition.x - i, currentPosition.y), 1);
                 }
 
                 break;
             case 'E':
-                range = Math.min(width - currentPosition.x, 10);
+                range = Math.min(width - currentPosition.x, Math.floor(width * 0.1));
                 offset = Math.floor(Math.random() * range);
                 // ### current position is going greater than width, which then causes W to go less than zero
                 if (offset < 3) offset = 3;
@@ -124,7 +106,7 @@ class Maze {
 
 
                 for (let i = 0; i <= offset; i++ ) {
-                    this.setPoint(new Point(currentPosition.x + i, currentPosition.y), true);
+                    this.setPoint(new Point(currentPosition.x + i, currentPosition.y), 1);
                 }
 
                 break;
@@ -145,23 +127,19 @@ class Maze {
     }
 
     nextDirection(lastDirection) {
-        console.log('nextDirection(lastDirection): ', lastDirection);
         let next = 'N';
 
         if (lastDirection === 'N') {
             const flip = Math.round(Math.random());
-            console.log('flip: ', flip);
             next = flip === 0 ? 'E' : 'W';
         }
 
-        console.log('next: ', next);
         return next;
     }
 }
 
 function generateGrid(conf) {
     const maze = new Maze(conf);
-    //return maze.testCheckerBoard();
 
     return maze.regenerateMaze();
 }
@@ -171,6 +149,9 @@ function dumpGrid(conf, grid) {
     const mazeWidth = conf.blockSizePx * conf.numBlocksWide;
     const mazeHeight = conf.blockSizePx * conf.numBlocksHigh;
     const maze = document.querySelector('.maze-container');
+
+
+    maze.innerHTML = "";
 
     maze.style.width = `${mazeWidth}px`;
     maze.style.height = `${mazeHeight}px`;
