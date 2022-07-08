@@ -1,4 +1,3 @@
-// Private class
 class Point {
     constructor(x, y) {
         this.x = x;
@@ -6,146 +5,160 @@ class Point {
     }
 }
 
-class Maze {
-    constructor(conf) {
-        this.grid = [];
-
-        for (let i = 0; i < conf.numBlocksHigh; i++) {
-            const row = [];
-            for (let j = 0; j < conf.numBlocksWide; j++) {
-                row.push(0);
-            }
-            this.grid.push(row);
-        }
+class Edge {
+    constructor(v1, v2) {
+        this.v1 = v1;
+        this.v2 = v2;
     }
 
-    regenerateMaze() {
-        this.makeSuccessPath();
+    getOther(v) {
+        if (v === this.v1) return this.v2;
+        if (v === this.v2) return this.v1;
 
-        return this.grid;
+        return null;
     }
 
-    // Private methods
-    makeSuccessPath() {
-        const entryRow = this.grid.length - 1;
-        const entryCell = Math.floor(Math.random() * this.grid[0].length);
-
-        let currentPosition = new Point(entryCell, entryRow);
-        let currentDirection;
-        this.setPoint(currentPosition, 1);
-
-        console.log('startingPoint: ', currentPosition);
-
-        let count = 0;
-
-        while(currentPosition.y > 0) {
-            const current = this.moveNextSuccessPath(currentPosition, currentDirection);
-            currentPosition = current.currentPosition;
-            currentDirection = current.currentDirection;
-
-            count++;
-        }
-    }
-
-    setPoint(point, value) {
-        this.grid[point.y][point.x] = value;
-    }
-
-    moveNextSuccessPath(currentPosition, direction) {
-        const height = this.grid.length;
-        const width = this.grid[0].length;
-        let nextPosition, range, offset;
-
-        direction = this.nextDirection(direction);
-
-        switch (direction) {
-            case 'N':
-                range = Math.min(currentPosition.y, Math.floor(height * 0.1));
-                offset = Math.round(Math.random() * range);
-
-                if (offset === 1) offset = 2;
-                if (currentPosition.y < 3) offset = currentPosition.y;
-
-                nextPosition = new Point(currentPosition.x, currentPosition.y - offset);
-
-                for (let i = offset; i > 0; i-- ) {
-                    this.setPoint(new Point(currentPosition.x, currentPosition.y - i), 1);
-                }
-
-                break;
-            case 'W':
-                range = Math.min(currentPosition.x, Math.floor(width * 0.1));
-                offset = Math.floor(Math.random() * range);
-                if (offset < 3) offset = 3;
-                if (currentPosition.x - offset < 0) offset = currentPosition.x;
-
-
-                nextPosition = new Point(currentPosition.x - offset, currentPosition.y);
-                if (currentPosition.x < 0) {
-                    nextPosition.x = 0;
-                    offset = currentPosition.x - nextPosition.x;
-                }
-
-                for (let i = offset; i > 0; i-- ) {
-                    this.setPoint(new Point(currentPosition.x - i, currentPosition.y), 1);
-                }
-
-                break;
-            case 'E':
-                range = Math.min(width - currentPosition.x, Math.floor(width * 0.1));
-                offset = Math.floor(Math.random() * range);
-                // ### current position is going greater than width, which then causes W to go less than zero
-                if (offset < 3) offset = 3;
-                if (currentPosition.x + offset > width) offset = width - 1;
-
-                nextPosition = new Point(currentPosition.x + offset, currentPosition.y);
-                if (currentPosition.x > width - 1) {
-                    nextPosition.x = width - 1;
-                    offset = nextPosition.x - currentPosition.x;
-                }
-
-
-                for (let i = 0; i <= offset; i++ ) {
-                    this.setPoint(new Point(currentPosition.x + i, currentPosition.y), 1);
-                }
-
-                break;
-        }
-
-        console.log('---------');
-        console.log('direction: ', direction);
-        console.log('  range: ', range);
-        console.log('  offset: ', offset);
-        console.log('nextPosition: ', nextPosition);
-
-
-
-        return {
-            currentPosition: nextPosition,
-            currentDirection: direction
-        };
-    }
-
-    nextDirection(lastDirection) {
-        let next = 'N';
-
-        if (lastDirection === 'N') {
-            const flip = Math.round(Math.random());
-            next = flip === 0 ? 'E' : 'W';
-        }
-
-        return next;
+    get either() {
+        return this.v1;
     }
 }
+
+class GridGraph {
+    constructor(width, height) {
+        this.WIDTH = width;
+        this.HEIGHT = height;
+    }
+
+    get vertexCount() {
+        return this.WIDTH * this.HEIGHT;
+    }
+
+    vertexForPoint(p) {
+        if (p.x >= 0 && p.x < this.WIDTH && p.y >= 0 && p.y < this.HEIGHT) {
+            return (p.y * this.WIDTH) + p.x;
+        }
+
+        return null;
+    }
+
+    pointForVertex(v) {
+        if (v >= 0 && v < this.vertexCount) {
+            const y = Math.floor(v / this.WIDTH);
+            const x = v % this.WIDTH;
+
+            return new Point(x, y);
+        }
+
+        return null;
+    }
+
+    adjacentEdges(v) {
+        const adj = [];
+        const p = this.pointForVertex(v);
+
+        if (p.x > 0) adj.push(new Point(p.x - 1, p.y));
+        if (p.x < this.WIDTH - 1) adj.push(new Point(p.x + 1, p.y));
+        if (p.y > 0) adj.push(new Point(p.x, p.y - 1));
+        if (p.y < this.WIDTH - 1) adj.push(new Point(p.x, p.y + 1));
+
+        return adj.map( p => new Edge(v, this.vertexForPoint(p)));
+    }
+}
+
+class PrimsMaze {
+    constructor(conf) {
+        this.G = new GridGraph(conf.numBlocksWide, conf.numBlocksHigh);
+        this.collectedEdges = [];
+        this.pendingEdges = [];
+        this.markedVertices = [];
+
+        for (let i = 0; i < this.G.vertexCount; i++) {
+            this.markedVertices.push(false);
+        }
+
+        this.visit(0);
+        while(this.pendingEdges.length > 0) {
+            //let e = this.pendingEdges.pop();
+            let e = this.choose(this.pendingEdges);
+            let v = e.either;
+            let w = e.getOther(v);
+
+            if (this.markedVertices[v] && this.markedVertices[w]) continue;
+
+            this.collectedEdges.push(e);
+
+        console.log('collectedEdges: ');
+        this.collectedEdges.forEach( e => {
+            console.log(`  (${e.v1},${e.v2}) `);
+        });
+
+
+            if (!this.markedVertices[v]) this.visit(v);
+            if (!this.markedVertices[w]) this.visit(w);
+        }
+    }
+
+    choose(list) {
+        const choiceIndex = Math.floor(Math.random() * list.length);
+        const itemA = list.splice(choiceIndex, 1);
+
+        return itemA[0];
+    }
+
+    visit(vertex) {
+        console.log('visit: ', vertex);
+        this.markedVertices[vertex] = true;
+        console.log('markedVertices: ', this.markedVertices);
+        this.G.adjacentEdges(vertex).forEach(e => {
+            console.log('adj e: ', e);
+            if (!this.markedVertices[e.getOther(vertex)]) this.pendingEdges.push(e);
+        });
+
+        console.log('pendingEdges: ');
+        this.pendingEdges.forEach( e => {
+            console.log(`  (${e.v1},${e.v2}) `);
+        });
+    }
+
+    getGrid() {
+        const mazeGrid = [];
+        const pathVertices = new Set();
+
+        for (let i = 0; i < this.G.HEIGHT; i++) {
+            const row = [];
+            for (let j = 0; j < this.G.WIDTH; j++) {
+               row.push(false);
+            }
+
+            mazeGrid.push(row);
+        }
+
+        this.collectedEdges.forEach( e => {
+            const v = e.either;
+            pathVertices.add(v);
+            pathVertices.add(e.getOther(v));
+        });
+
+        pathVertices.forEach( vertex => {
+            const p = this.G.pointForVertex(vertex);
+            mazeGrid[p.y][p.x] = true;
+        });
+
+        return mazeGrid;
+    }
+}
+
 
 function generateGrid(conf) {
-    const maze = new Maze(conf);
+    const maze = new PrimsMaze(conf);
 
-    return maze.regenerateMaze();
+    return maze.getGrid();
 }
 
-// Draw the data structure on the screen
 function dumpGrid(conf, grid) {
+
+    console.log('grid: ', grid);
+
     const mazeWidth = conf.blockSizePx * conf.numBlocksWide;
     const mazeHeight = conf.blockSizePx * conf.numBlocksHigh;
     const maze = document.querySelector('.maze-container');
