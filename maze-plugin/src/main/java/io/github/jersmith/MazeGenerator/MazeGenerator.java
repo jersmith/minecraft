@@ -29,8 +29,8 @@ public final class MazeGenerator extends JavaPlugin {
     			String name = player.getDisplayName();
     			Location location = player.getLocation();
     			sender.sendMessage(name + " is at " + location);
-    			location.add(2.0, 0.0, 0.0);
-    			this.generateCube(location, 2);
+    			location.add(10.0, 0.0, 0.0);
+    			this.generateMaze(location, 8);
     		}
     		
     		return true;
@@ -65,5 +65,25 @@ public final class MazeGenerator extends JavaPlugin {
                 }
             }
         }
+    }
+    
+    public void generateMaze(Location loc, int length) {
+    	PrimsMaze maze = new PrimsMaze(length);
+    	boolean[][] grid = maze.grid();
+    	
+    	int height = loc.getBlockY();
+    	int xStart = loc.getBlockX();
+    	int zStart = loc.getBlockZ();
+    	
+    	World world = loc.getWorld();
+    	
+    	for (int i = 0; i < length; i++) {
+    		for (int j = 0; j < length; j++) {
+    			if (grid[i][j]) {
+    				Block currentBlock = world.getBlockAt(xStart + j, height, zStart + i);
+    				currentBlock.setType(Material.DIRT);
+    			}
+    		}
+    	}
     }
 }
