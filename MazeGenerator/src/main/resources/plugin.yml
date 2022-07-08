@@ -1,0 +1,7 @@
+name: MazeGeneratorPlugin
+main: com.karbonhq.games.minecraft.mazegenerator.MazeGeneratorPlugin
+version: 0.0.1-SNAPSHOT
+commands:
+  mazegen:
+    description: Generates a maze. When it's done, anyway.
+    usage: /mazegen
