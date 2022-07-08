@@ -25,12 +25,9 @@ class Edge {
 
 class GridGraph {
     constructor(width, height) {
-        this.WIDTH = width;
-        this.HEIGHT = height;
-    }
-
-    get vertexCount() {
-        return this.WIDTH * this.HEIGHT;
+        this.WIDTH = (2 * width) - 1;
+        this.HEIGHT = (2 * height) - 1;
+        this.vertexCount = this.WIDTH * this.HEIGHT;
     }
 
     vertexForPoint(p) {
@@ -56,12 +53,22 @@ class GridGraph {
         const adj = [];
         const p = this.pointForVertex(v);
 
-        if (p.x > 0) adj.push(new Point(p.x - 1, p.y));
-        if (p.x < this.WIDTH - 1) adj.push(new Point(p.x + 1, p.y));
-        if (p.y > 0) adj.push(new Point(p.x, p.y - 1));
-        if (p.y < this.WIDTH - 1) adj.push(new Point(p.x, p.y + 1));
+        if (p.x > 1) adj.push(new Point(p.x - 2, p.y));
+        if (p.x < this.WIDTH - 2) adj.push(new Point(p.x + 2, p.y));
+        if (p.y > 1) adj.push(new Point(p.x, p.y - 2));
+        if (p.y < this.WIDTH - 2) adj.push(new Point(p.x, p.y + 2));
 
         return adj.map( p => new Edge(v, this.vertexForPoint(p)));
+    }
+
+    between(p1, p2) {
+        if (p1.x === p2.x) {
+            return new Point(p1.x, Math.max(p1.y, p2.y) - 1);
+        } else if (p1.y === p2.y) {
+            return new Point(Math.max(p1.x, p2.x) - 1, p1.y);
+        }
+
+        return null;
     }
 }
 
@@ -70,15 +77,12 @@ class PrimsMaze {
         this.G = new GridGraph(conf.numBlocksWide, conf.numBlocksHigh);
         this.collectedEdges = [];
         this.pendingEdges = [];
-        this.markedVertices = [];
+        this.markedVertices = {};
 
-        for (let i = 0; i < this.G.vertexCount; i++) {
-            this.markedVertices.push(false);
-        }
-
-        this.visit(0);
+        // The maze generates better if you pick a vertex in the middle. The 24th vertex
+        // requires a maze at least 5 x 5
+        this.visit(24);
         while(this.pendingEdges.length > 0) {
-            //let e = this.pendingEdges.pop();
             let e = this.choose(this.pendingEdges);
             let v = e.either;
             let w = e.getOther(v);
@@ -86,12 +90,6 @@ class PrimsMaze {
             if (this.markedVertices[v] && this.markedVertices[w]) continue;
 
             this.collectedEdges.push(e);
-
-        console.log('collectedEdges: ');
-        this.collectedEdges.forEach( e => {
-            console.log(`  (${e.v1},${e.v2}) `);
-        });
-
 
             if (!this.markedVertices[v]) this.visit(v);
             if (!this.markedVertices[w]) this.visit(w);
@@ -106,23 +104,14 @@ class PrimsMaze {
     }
 
     visit(vertex) {
-        console.log('visit: ', vertex);
         this.markedVertices[vertex] = true;
-        console.log('markedVertices: ', this.markedVertices);
         this.G.adjacentEdges(vertex).forEach(e => {
-            console.log('adj e: ', e);
             if (!this.markedVertices[e.getOther(vertex)]) this.pendingEdges.push(e);
-        });
-
-        console.log('pendingEdges: ');
-        this.pendingEdges.forEach( e => {
-            console.log(`  (${e.v1},${e.v2}) `);
         });
     }
 
     getGrid() {
         const mazeGrid = [];
-        const pathVertices = new Set();
 
         for (let i = 0; i < this.G.HEIGHT; i++) {
             const row = [];
@@ -134,14 +123,13 @@ class PrimsMaze {
         }
 
         this.collectedEdges.forEach( e => {
-            const v = e.either;
-            pathVertices.add(v);
-            pathVertices.add(e.getOther(v));
-        });
+            const v = this.G.pointForVertex(e.v1);
+            const w = this.G.pointForVertex(e.v2);
+            const b = this.G.between(v, w);
 
-        pathVertices.forEach( vertex => {
-            const p = this.G.pointForVertex(vertex);
-            mazeGrid[p.y][p.x] = true;
+            mazeGrid[v.y][v.x] = true;
+            mazeGrid[w.y][w.x] = true;
+            mazeGrid[b.y][b.x] = true;
         });
 
         return mazeGrid;
@@ -156,11 +144,8 @@ function generateGrid(conf) {
 }
 
 function dumpGrid(conf, grid) {
-
-    console.log('grid: ', grid);
-
-    const mazeWidth = conf.blockSizePx * conf.numBlocksWide;
-    const mazeHeight = conf.blockSizePx * conf.numBlocksHigh;
+    const mazeWidth = conf.blockSizePx * ((2 * conf.numBlocksWide) - 1);
+    const mazeHeight = conf.blockSizePx * ((2 * conf.numBlocksHigh) - 1);
     const maze = document.querySelector('.maze-container');
 
 
