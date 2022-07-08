@@ -30,7 +30,7 @@ public final class MazeGenerator extends JavaPlugin {
     			Location location = player.getLocation();
     			sender.sendMessage(name + " is at " + location);
     			location.add(10.0, 0.0, 0.0);
-    			this.generateMaze(location, 8);
+    			this.generateMaze(location, 16);
     		}
     		
     		return true;
@@ -79,9 +79,14 @@ public final class MazeGenerator extends JavaPlugin {
     	
     	for (int i = 0; i < length; i++) {
     		for (int j = 0; j < length; j++) {
-    			if (grid[i][j]) {
-    				Block currentBlock = world.getBlockAt(xStart + j, height, zStart + i);
-    				currentBlock.setType(Material.DIRT);
+    			Block currentBlock = world.getBlockAt(xStart + j, height, zStart + i);
+    			Block secondLayer = world.getBlockAt(xStart + j, height + 1, zStart + i);
+    			if (grid[i][j] == true) {
+    				currentBlock.setType(Material.AIR);
+    				secondLayer.setType(Material.AIR);
+    			} else {
+    				currentBlock.setType(Material.STONE);
+    				secondLayer.setType(Material.STONE);
     			}
     		}
     	}
