@@ -1,0 +1,8 @@
+name: MazeGenerator
+main: io.github.jersmith.MazeGenerator.MazeGenerator
+version: 0.0.1-SNAPSHOT
+author: Northramite
+commands:
+  mazegen:
+    description: Generate a player maze.
+    usage: /Mazegen:mazegen [blockid]
