@@ -3,6 +3,6 @@ main: io.github.jersmith.MazeGenerator.MazeGenerator
 version: 0.0.1-SNAPSHOT
 author: Northramite
 commands:
-  mazegen:
+  build:
     description: Generate a player maze.
-    usage: /Mazegen:mazegen [blockid]
+    usage: /Mazegen:build [size]
